@@ -75,6 +75,41 @@ def Armijo_Linesearch(mu, x, d, gradient_x, alpha=1.0, beta=0.5, c=1e-5):
     return alpha
 
 
+def ex3cd():
+    H = np.array([[5, -1, -1, -1, -1],
+                  [-1, 5, -1, -1, -1],
+                  [-1, -1, 5, -1, -1],
+                  [-1, -1, -1, 5, -1],
+                  [-1, -1, -1, -1, 5]])
+    g = np.array([[18],
+                  [6],
+                  [-12],
+                  [-6],
+                  [18]])
+    a = np.array([[0],
+                  [0],
+                  [0],
+                  [0],
+                  [0]])
+    b = np.array([[5],
+                  [5],
+                  [5],
+                  [5],
+                  [5]])
+    result_x = Coordinate_Descent(H, g, a, b)
+
+
+def Coordinate_Descent(H, g, a, b, iterations=100):
+    n = a.shape[0]
+    current_x = np.zeros((n, 1))
+    objective_history = []
+    for i in range(iterations):
+        for j in range(n):
+            ################## in progress
+            current_x = 0
+    return current_x, objective_history
+
+
 if __name__ == '__main__':
     ex2d()
 
