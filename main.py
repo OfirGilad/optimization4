@@ -1,38 +1,42 @@
 import math
 import numpy as np
+import matplotlib.pyplot as plt
 
 
 def ex2d():
-    x = np.array([[0],
-                  [1]])
-    mew = 0.01
-    print("hi")
+    x = np.array([[0.0],
+                  [0.0]])
+    result_x, objective_history = Steepest_Descent(x)
+    fig, axs = plt.subplots()
+    axs.plot(objective_history, label="objective value")
+
+    plt.show()
+    print(result_x)
 
 
-def objective(x, mew):
+def objective(x, mu):
     x1 = x[0][0]
     x2 = x[1][0]
     function = math.pow(x1+x2, 2) - 10*(x1+x2)
-    penalty1 = mew * math.pow(3*x1 + x2 - 6, 2)
-    penalty2 = mew * math.pow(max(0.0, math.pow(x1, 2) + math.pow(x2, 2) - 5), 2)
-    penalty3 = mew * math.pow(max(0.0, -x1), 2)
+    penalty1 = mu * math.pow(3*x1 + x2 - 6, 2)
+    penalty2 = mu * math.pow(max(0.0, math.pow(x1, 2) + math.pow(x2, 2) - 5), 2)
+    penalty3 = mu * math.pow(max(0.0, -x1), 2)
     objective_x = function + penalty1 + penalty2 + penalty3
     return objective_x
 
 
-# need to edit
-def gradient(x, mew):
+def gradient(x, mu):
     x1 = x[0][0]
-    x2 = x[0][1]
+    x2 = x[1][0]
     sub_derivative_x1 = 2*x1 + 2*x2 - 10
-    penalty1_x1 = mew * math.pow(3, 2)
-    penalty2_x1 = mew * (2*x1) * math.pow(max(0.0, math.pow(x1, 2) + math.pow(x2, 2) - 5), 2)
-    penalty3_x1 = mew * (-1) * math.pow(max(0.0, -x1), 2)
+    penalty1_x1 = mu * (18*x1 + 6*x2 - 36)
+    penalty2_x1 = mu * max(0.0, 4*math.pow(x1, 3) + 4*x1*math.pow(x2, 2) - 20*x1)
+    penalty3_x1 = mu * max(0.0, -2*x1)
     derivative_x1 = sub_derivative_x1 + penalty1_x1 + penalty2_x1 + penalty3_x1
 
     sub_derivative_x2 = 2 * x1 + 2 * x2 - 10
-    penalty1_x2 = mew
-    penalty2_x2 = mew * (2*x2) * math.pow(max(0.0, math.pow(x1, 2) + math.pow(x2, 2) - 5), 2)
+    penalty1_x2 = mu * (2*x2 + 6*x1 - 12)
+    penalty2_x2 = mu * max(0.0, 4*math.pow(x2, 3) + 4*x2*math.pow(x1, 2) - 20*x2)
     penalty3_x2 = 0
     derivative_x2 = sub_derivative_x2 + penalty1_x2 + penalty2_x2 + penalty3_x2
 
@@ -41,38 +45,35 @@ def gradient(x, mew):
     return gradient_x
 
 
-'''
-def Steepest_Descent(w, x_train, y_train, x_test, y_test, alpha=1.0, iterations=100):
-    train_cost_history = []
-    test_cost_history = []
-    d = np.zeros(w.shape)
-    g_k = np.zeros(w.shape)
-    f_k = 1
-    for i in range(iterations):
-        w = np.clip(w, -1, 1)
-        if i != 0:
-            alpha = Armijo_Linesearch(w, x_train, y_train, d, g_k)
-        w += alpha * d
-        if f_k < 1e-3:
-            break
-        f_k, g_k = Logistic_Regression(w, x_train, y_train, hessian_indicator=False)
-        d = -np.array(g_k)
-        f_0 = cost(w, x_test, y_test)
-        train_cost_history.append(f_k[0][0])
-        test_cost_history.append(f_0[0][0])
-    return w, np.array(train_cost_history), np.array(test_cost_history)
+def Steepest_Descent(x, alpha=1.0, iterations=10):
+    mu_vector = [0.01, 0.1, 1.0, 10.0, 100.0]
+    objective_history = []
+    current_x = x
+    for mu in mu_vector:
+        print("mu = " + str(mu))
+        for i in range(iterations):
+            gradient_x = gradient(current_x, mu)
+            if np.linalg.norm(gradient_x) < 1e-3:
+                break
+            d = -gradient_x
+            alpha = Armijo_Linesearch(mu, current_x, d, gradient_x, alpha=alpha)
+            current_x += alpha * d
+            objective_x = objective(current_x, mu)
+            objective_history.append(objective_x)
+
+    return current_x, objective_history
 
 
-def Armijo_Linesearch(w, x, y, d, g_k, alpha=1.0, beta=0.8, c=1e-5):
-    f_k = cost(w, x, y)
+def Armijo_Linesearch(mu, x, d, gradient_x, alpha=1.0, beta=0.5, c=1e-5):
+    objective_x = objective(x, mu)
     for i in range(10):
-        f_k_1 = cost(w + (alpha * d), x, y)
-        if f_k_1 <= f_k + (alpha * c * np.dot(d.transpose(), g_k)):
+        objective_x_1 = objective(x + (alpha * d), mu)
+        if objective_x_1 <= objective_x + (alpha * c * np.dot(d.transpose(), gradient_x)):
             return alpha
         else:
             alpha = beta * alpha
     return alpha
-'''
+
 
 if __name__ == '__main__':
     ex2d()
