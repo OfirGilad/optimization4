@@ -105,40 +105,132 @@ def Armijo_Linesearch(mu, x, d, gradient_x, alpha=1.0, beta=0.5, c=1e-5):
 
 
 def ex3cd():
-    H = np.array([[5, -1, -1, -1, -1],
-                  [-1, 5, -1, -1, -1],
-                  [-1, -1, 5, -1, -1],
-                  [-1, -1, -1, 5, -1],
-                  [-1, -1, -1, -1, 5]])
-    g = np.array([[18],
-                  [6],
-                  [-12],
-                  [-6],
-                  [18]])
-    a = np.array([[0],
-                  [0],
-                  [0],
-                  [0],
-                  [0]])
-    b = np.array([[5],
-                  [5],
-                  [5],
-                  [5],
-                  [5]])
-    result_x = Coordinate_Descent(H, g, a, b)
+    n = 5
+    H = init_h(n)
+    g = np.array([18, 6, -12, -6, 18])
+    a = np.array([0] * n)
+    b = np.array([5] * n)
+    x0 = np.array([1] * n, dtype=np.float_)
+    result_x = Coordinate_Descent(H, g, x0, a, b)
+    print("x = ", result_x)
 
 
-def Coordinate_Descent(H, g, a, b, iterations=100):
-    n = a.shape[0]
-    current_x = np.zeros((n, 1))
+def init_h(n):
+    H = np.ones(n)
+    H *= -1
+    return H + np.diag([6] * n)
+
+
+def Coordinate_Descent(H, g, x0, a, b, iterations=100):
+    """
+    :param H: matrix
+    :param g: vector
+    :param x0: initial guess
+    :param a: vector, lower bound constraint
+    :param b: vector, upper bound constraint
+    :return: final x
+    """
+    H_diag = np.diag(np.diag(H))
+    H_rest = H - H_diag
+    x = x0
+    curr_norm = np.linalg.norm(x)
+    for _ in range(iterations):
+        for i in range(len(x)):
+            x[i] = calc_xi(H_rest, H[i][i], g, x, a, b, i)
+        last_norm = curr_norm
+        curr_norm = np.linalg.norm(x)
+        if abs(last_norm - curr_norm) < 0.001:
+            break
+    return x
+
+
+def calc_xi(H_rest, Hii, g, x, a, b, i):
+    """
+    :param Hii: the coordinate (i,i) of the H matrix
+    :param H: matrix
+    :param g: vector
+    :param x: current answer
+    :param a: vector, lower bound constraint
+    :param b: vector, upper bound constraint
+    :return: final x
+    """
+    xi = - (H_rest[i] @ x - g[i])
+    xi /= Hii
+    # return xi
+    return apply_constraints(xi, a, b, i)
+
+
+def apply_constraints(xi, a, b, i):
+    xi = min(xi, b[i])
+    xi = max(xi, a[i])
+    return xi
+
+
+def ex4bc():
+    A = np.random.normal(0, 1, (100, 200))
+    x = np.zeros(200)
+    x[:20] = np.random.rand(20)
+    np.random.shuffle(x)
+    x = np.array([x]).transpose()
+    noise = np.random.normal(0, 0.1, (100, 1))
+    b = A @ x + noise
+    C = np.concatenate((np.eye(200), -np.eye(200))).transpose()
+    lambda_x = 1.5
+    w = np.ones((400, 1))
+    w_result, objective_history = Steepest_Descent_wrt(A, C, w, b, lambda_x)
+    x = C @ w_result
+
+    fig1, axs1 = plt.subplots()
+    axs1.plot(objective_history, label="objective")
+    plt.show()
+
+    print(x)
+
+
+def Steepest_Descent_wrt(A, C, w, b, lambda_w, alpha=1.0, iterations=100):
     objective_history = []
+    current_w = w
     for i in range(iterations):
-        for j in range(n):
-            ################## in progress
-            current_x = 0
-    return current_x, objective_history
+        gradient_w = gradient_wrt(A, C, current_w, b, lambda_w)
+        print(np.linalg.norm(gradient_w))
+        if np.linalg.norm(gradient_w) < 1e-3:
+            break
+        d = -gradient_w
+        alpha = Armijo_Linesearch_wrt(A, C, current_w, b, lambda_w, d, gradient_w, alpha=alpha)
+        current_w += alpha * d
+        objective_w = objective_wrt(A, C, current_w, b, lambda_w)
+        objective_history.append(np.linalg.norm(objective_w))
+
+    return current_w, objective_history
+
+
+def Armijo_Linesearch_wrt(A, C, w, b, lambda_w, d, gradient_x, alpha=1.0, beta=0.5, c=1e-5):
+    objective_w = objective_wrt(A, C, w, b, lambda_w)
+    for i in range(10):
+        objective_w_1 = objective_wrt(A, C, w + (alpha * d), b, lambda_w)
+        if objective_w_1 <= objective_w + (alpha * c * np.dot(d.transpose(), gradient_x)):
+            return alpha
+        else:
+            alpha = beta * alpha
+    return alpha
+
+
+def objective_wrt(A, C, w, b, lambda_w):
+    ACw_b = A @ C @ w - b
+    ones_vector = np.ones(w.shape)
+    objective_w_ans = ACw_b.transpose() @ ACw_b + lambda_w * (ones_vector.transpose() @ w)
+    return objective_w_ans
+
+
+def gradient_wrt(A, C, w, b, lambda_w):
+    ACw_b = A @ C @ w - b
+    gradient_w_ans = 2 * C.transpose() @ A.transpose() @ ACw_b + lambda_w
+    return gradient_w_ans
+
 
 
 if __name__ == '__main__':
-    ex2d()
+    #ex2d()
+    #ex3cd()
+    ex4bc()
 
