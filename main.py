@@ -6,12 +6,33 @@ import matplotlib.pyplot as plt
 def ex2d():
     x = np.array([[0.0],
                   [0.0]])
-    result_x, objective_history = Steepest_Descent(x)
-    fig, axs = plt.subplots()
-    axs.plot(objective_history, label="objective value")
-
+    result_x, objective_history, constraint1_history, constraint2_history, constraint3_history = Steepest_Descent(x)
+    fig1, axs1 = plt.subplots()
+    fig2, axs2 = plt.subplots()
+    fig3, axs3 = plt.subplots()
+    fig4, axs4 = plt.subplots()
+    axs1.plot(objective_history, label="objective")
+    axs2.plot(constraint1_history, label="constraint1")
+    axs3.plot(constraint2_history, label="constraint2")
+    axs4.plot(constraint3_history, label="constraint3")
+    axs1.set_ylabel('Value')
+    axs2.set_ylabel('Value')
+    axs3.set_ylabel('Value')
+    axs4.set_ylabel('Value')
+    axs1.set_xlabel('Iterations')
+    axs2.set_xlabel('Iterations')
+    axs3.set_xlabel('Iterations')
+    axs4.set_xlabel('Iterations')
+    axs1.set_title('Function values')
+    axs2.set_title('Constraint1 violation')
+    axs3.set_title('Constraint2 violation')
+    axs4.set_title('Constraint3 violation')
+    axs1.legend()
+    axs2.legend()
+    axs3.legend()
+    axs4.legend()
     plt.show()
-    print(result_x)
+    print("x = ", result_x)
 
 
 def objective(x, mu):
@@ -45,9 +66,12 @@ def gradient(x, mu):
     return gradient_x
 
 
-def Steepest_Descent(x, alpha=1.0, iterations=10):
+def Steepest_Descent(x, alpha=1.0, iterations=50):
     mu_vector = [0.01, 0.1, 1.0, 10.0, 100.0]
     objective_history = []
+    constraint1_history = []
+    constraint2_history = []
+    constraint3_history = []
     current_x = x
     for mu in mu_vector:
         print("mu = " + str(mu))
@@ -60,8 +84,13 @@ def Steepest_Descent(x, alpha=1.0, iterations=10):
             current_x += alpha * d
             objective_x = objective(current_x, mu)
             objective_history.append(objective_x)
+            x1 = x[0][0]
+            x2 = x[1][0]
+            constraint1_history.append(np.linalg.norm(3 * x1 + x2 - 6))
+            constraint2_history.append(np.linalg.norm((max(0.0, math.pow(x1, 2) + math.pow(x2, 2) - 5))))
+            constraint3_history.append(np.linalg.norm((max(0.0, -x1))))
 
-    return current_x, objective_history
+    return current_x, objective_history, constraint1_history, constraint2_history, constraint3_history
 
 
 def Armijo_Linesearch(mu, x, d, gradient_x, alpha=1.0, beta=0.5, c=1e-5):
