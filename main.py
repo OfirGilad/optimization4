@@ -188,7 +188,6 @@ def ex4bc():
     axs1.plot(objective_history, label="objective")
     axs1.set_yscale('log')
     plt.show()
-
     print("x = ", x)
 
 
