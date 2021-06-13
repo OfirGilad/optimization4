@@ -1,5 +1,6 @@
 import math
 import numpy as np
+import scipy.sparse as sparse
 import matplotlib.pyplot as plt
 
 
@@ -171,20 +172,24 @@ def ex4bc():
     x = np.zeros(200)
     x[:20] = np.random.rand(20)
     np.random.shuffle(x)
-    x = np.array([x]).transpose()
+    x = sparse.coo_matrix([x]).transpose()
+    #x = np.array([x]).transpose()
     noise = np.random.normal(0, 0.1, (100, 1))
     b = A @ x + noise
+
     C = np.concatenate((np.eye(200), -np.eye(200))).transpose()
-    lambda_x = 1.5
-    w = np.ones((400, 1))
+    lambda_x = 46
+    w = np.random.rand(400, 1)
+    #w = np.ones((400, 1))
     w_result, objective_history = Steepest_Descent_wrt(A, C, w, b, lambda_x)
     x = C @ w_result
 
     fig1, axs1 = plt.subplots()
     axs1.plot(objective_history, label="objective")
+    axs1.set_yscale('log')
     plt.show()
 
-    print(x)
+    print("x = ", x)
 
 
 def Steepest_Descent_wrt(A, C, w, b, lambda_w, alpha=1.0, iterations=100):
@@ -198,17 +203,20 @@ def Steepest_Descent_wrt(A, C, w, b, lambda_w, alpha=1.0, iterations=100):
         d = -gradient_w
         alpha = Armijo_Linesearch_wrt(A, C, current_w, b, lambda_w, d, gradient_w, alpha=alpha)
         current_w += alpha * d
-        objective_w = objective_wrt(A, C, current_w, b, lambda_w)
-        objective_history.append(np.linalg.norm(objective_w))
+        current_w = np.clip(current_w, 0, 1)
+        current_objective_w = objective_wrt(A, C, current_w, b, lambda_w)
+        objective_history.append(np.linalg.norm(current_objective_w))
 
     return current_w, objective_history
 
 
-def Armijo_Linesearch_wrt(A, C, w, b, lambda_w, d, gradient_x, alpha=1.0, beta=0.5, c=1e-5):
+def Armijo_Linesearch_wrt(A, C, w, b, lambda_w, d, gradient_w, alpha=1.0, beta=0.5, c=1e-5):
     objective_w = objective_wrt(A, C, w, b, lambda_w)
     for i in range(10):
-        objective_w_1 = objective_wrt(A, C, w + (alpha * d), b, lambda_w)
-        if objective_w_1 <= objective_w + (alpha * c * np.dot(d.transpose(), gradient_x)):
+        w_alpha_d = w + (alpha * d)
+        w_alpha_d = np.clip(w_alpha_d, 0, 1)
+        objective_w_1 = objective_wrt(A, C, w_alpha_d, b, lambda_w)
+        if objective_w_1 <= objective_w + (alpha * c * np.dot(d.transpose(), gradient_w)):
             return alpha
         else:
             alpha = beta * alpha
