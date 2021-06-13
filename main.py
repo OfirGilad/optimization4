@@ -16,10 +16,10 @@ def ex2d():
     axs2.plot(constraint1_history, label="constraint1")
     axs3.plot(constraint2_history, label="constraint2")
     axs4.plot(constraint3_history, label="constraint3")
-    axs1.set_ylabel('Value')
-    axs2.set_ylabel('Value')
-    axs3.set_ylabel('Value')
-    axs4.set_ylabel('Value')
+    axs1.set_ylabel('Values')
+    axs2.set_ylabel('Values')
+    axs3.set_ylabel('Values')
+    axs4.set_ylabel('Values')
     axs1.set_xlabel('Iterations')
     axs2.set_xlabel('Iterations')
     axs3.set_xlabel('Iterations')
@@ -168,27 +168,77 @@ def apply_constraints(xi, a, b, i):
 
 
 def ex4bc():
+    # Generating Data
+    A, b = generate_A_b()
+    lambda_w, C, w = generate_lambda_C_w_()
+    w_result, objective_history = Steepest_Descent_wrt(A, C, w, b, lambda_w)
+    x = C @ w_result
+
+    # Creating lambda graph
+    fig1, axs1 = plt.subplots()
+    axs1.plot(objective_history, label="objective value")
+    axs1.set_yscale('log')
+    axs1.set_ylabel('Values')
+    axs1.set_xlabel('Iterations')
+    axs1.set_title('Function values for lambda=50')
+    axs1.legend()
+    plt.show()
+    print("x = ", x)
+
+    # Creating non-zeros entries graph
+    lambda_x_list = range(0, 105, 5)
+    x_non_zeros_counter = []
+    for lambda_w_value in lambda_x_list:
+        w_result, objective_history = Steepest_Descent_wrt(A, C, w, b, lambda_w_value)
+        x = C @ w_result
+        x_non_zeros_counter.append(non_zeros_entries_percentage(x))
+    fig2, axs2 = plt.subplots()
+    axs2.plot(lambda_x_list, x_non_zeros_counter, label="non-zeros entries percentage")
+    axs2.set_yscale('log')
+    axs2.set_ylabel('Percentages')
+    axs2.set_xlabel('Lambda values')
+    axs2.set_title('Non-zeros entries percentage per lambda')
+    axs2.legend()
+    plt.show()
+
+
+def generate_A_b():
     A = np.random.normal(0, 1, (100, 200))
     x = np.zeros(200)
     x[:20] = np.random.rand(20)
     np.random.shuffle(x)
     x = sparse.coo_matrix([x]).transpose()
-    #x = np.array([x]).transpose()
     noise = np.random.normal(0, 0.1, (100, 1))
     b = A @ x + noise
+    return A, b
 
+
+def generate_lambda_C_w_():
+    lambda_w = 50
     C = np.concatenate((np.eye(200), -np.eye(200))).transpose()
-    lambda_x = 46
     w = np.random.rand(400, 1)
-    #w = np.ones((400, 1))
-    w_result, objective_history = Steepest_Descent_wrt(A, C, w, b, lambda_x)
-    x = C @ w_result
+    return lambda_w, C, w
 
-    fig1, axs1 = plt.subplots()
-    axs1.plot(objective_history, label="objective")
-    axs1.set_yscale('log')
-    plt.show()
-    print("x = ", x)
+
+def non_zeros_entries_percentage(x):
+    percentage = 0.0
+    for i in range(x.shape[0]):
+        if x[i][0] > 0:
+            percentage += 1
+    return percentage/2.0
+
+
+def objective_wrt(A, C, w, b, lambda_w):
+    ACw_b = A @ C @ w - b
+    ones_vector = np.ones(w.shape)
+    objective_w_ans = ACw_b.transpose() @ ACw_b + lambda_w * (ones_vector.transpose() @ w)
+    return objective_w_ans
+
+
+def gradient_wrt(A, C, w, b, lambda_w):
+    ACw_b = A @ C @ w - b
+    gradient_w_ans = 2 * C.transpose() @ A.transpose() @ ACw_b + lambda_w
+    return gradient_w_ans
 
 
 def Steepest_Descent_wrt(A, C, w, b, lambda_w, alpha=1.0, iterations=100):
@@ -196,7 +246,6 @@ def Steepest_Descent_wrt(A, C, w, b, lambda_w, alpha=1.0, iterations=100):
     current_w = w
     for i in range(iterations):
         gradient_w = gradient_wrt(A, C, current_w, b, lambda_w)
-        print(np.linalg.norm(gradient_w))
         if np.linalg.norm(gradient_w) < 1e-3:
             break
         d = -gradient_w
@@ -205,7 +254,6 @@ def Steepest_Descent_wrt(A, C, w, b, lambda_w, alpha=1.0, iterations=100):
         current_w = np.clip(current_w, 0, None)
         current_objective_w = objective_wrt(A, C, current_w, b, lambda_w)
         objective_history.append(np.linalg.norm(current_objective_w))
-
     return current_w, objective_history
 
 
@@ -222,21 +270,8 @@ def Armijo_Linesearch_wrt(A, C, w, b, lambda_w, d, gradient_w, alpha=1.0, beta=0
     return alpha
 
 
-def objective_wrt(A, C, w, b, lambda_w):
-    ACw_b = A @ C @ w - b
-    ones_vector = np.ones(w.shape)
-    objective_w_ans = ACw_b.transpose() @ ACw_b + lambda_w * (ones_vector.transpose() @ w)
-    return objective_w_ans
-
-
-def gradient_wrt(A, C, w, b, lambda_w):
-    ACw_b = A @ C @ w - b
-    gradient_w_ans = 2 * C.transpose() @ A.transpose() @ ACw_b + lambda_w
-    return gradient_w_ans
-
-
 if __name__ == '__main__':
-    #ex2d()
+    ex2d()
     #ex3cd()
-    ex4bc()
+    #ex4bc()
 
