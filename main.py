@@ -202,7 +202,7 @@ def Steepest_Descent_wrt(A, C, w, b, lambda_w, alpha=1.0, iterations=100):
         d = -gradient_w
         alpha = Armijo_Linesearch_wrt(A, C, current_w, b, lambda_w, d, gradient_w, alpha=alpha)
         current_w += alpha * d
-        current_w = np.clip(current_w, 0, 1)
+        current_w = np.clip(current_w, 0, None)
         current_objective_w = objective_wrt(A, C, current_w, b, lambda_w)
         objective_history.append(np.linalg.norm(current_objective_w))
 
@@ -213,7 +213,7 @@ def Armijo_Linesearch_wrt(A, C, w, b, lambda_w, d, gradient_w, alpha=1.0, beta=0
     objective_w = objective_wrt(A, C, w, b, lambda_w)
     for i in range(10):
         w_alpha_d = w + (alpha * d)
-        w_alpha_d = np.clip(w_alpha_d, 0, 1)
+        w_alpha_d = np.clip(w_alpha_d, 0, None)
         objective_w_1 = objective_wrt(A, C, w_alpha_d, b, lambda_w)
         if objective_w_1 <= objective_w + (alpha * c * np.dot(d.transpose(), gradient_w)):
             return alpha
@@ -233,7 +233,6 @@ def gradient_wrt(A, C, w, b, lambda_w):
     ACw_b = A @ C @ w - b
     gradient_w_ans = 2 * C.transpose() @ A.transpose() @ ACw_b + lambda_w
     return gradient_w_ans
-
 
 
 if __name__ == '__main__':
